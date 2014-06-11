@@ -2,8 +2,8 @@
 
 /**
  * @file
- * Provides an example payment method for Drupal Commerce for testing and
- *   development.
+ * Provides a SEPA payment method for Drupal Commerce
+ *  
  */
 
 
@@ -99,4 +99,32 @@ function commerce_sepa_transaction($payment_method, $order, $charge) {
   );
 
   commerce_payment_transaction_save($transaction);
+}
+
+
+function commerce_sepa_default_rules_configuration() {
+  $configs = array();
+  $rule = '{ "commerce_sepa_sent_sepa_direct_debit_mandate" : {
+    "LABEL" : "Sent SEPA Direct Debit Mandate",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "Commerce", "Commerce SEPA" ],
+    "REQUIRES" : [ "commerce_payment", "rules_i18n", "rules", "commerce_checkout" ],
+    "ON" : { "commerce_checkout_complete" : [] },
+    "IF" : [
+      { "commerce_payment_selected_payment_method" : { "commerce_order" : [ "commerce_order" ], "method_id" : "commerce_sepa" } }
+    ],
+    "DO" : [
+      { "mail" : {
+          "to" : [ "commerce-order:mail" ],
+          "subject" : "SEPA Direct Debit Mandate for order [commerce-order:order-number]",
+          "message" : "SEPA-Lastschriftmandat\r\n\r\nZahlungsempf\u00e4nger: [commerce-order:commerce_customer_billing]\r\nGl\u00e4ubiger-Identifikationsnummer: DEXXXXXXXXXXX\r\nMandatsreferenz: [commerce-order:order-number]\r\n\r\nIch erm\u00e4chtige den Zahlungsempf\u00e4nger, Zahlungen von meinem Konto mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von dem Zahlungsempf\u00e4nger auf mein Konto gezogenen Lastschriften einzul\u00f6sen.\r\n\r\nHinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut vereinbarten Bedingungen.\r\n\r\n[site:name]",
+          "language" : [ "commerce-order:state" ]
+        }
+      }
+    ]
+  }
+	}';
+  $configs['commerce_sepa_sent_sepa_direct_debit_mandate'] = rules_import($rule);
+  return $configs;
 }
