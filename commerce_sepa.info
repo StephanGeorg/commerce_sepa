@@ -1,0 +1,6 @@
+name = Commerce SEPA Paymant
+description = Provides an SEPA payment method with IBAN validation.
+package = Commerce
+dependencies[] = commerce
+dependencies[] = commerce_payment
+core = 7.x
