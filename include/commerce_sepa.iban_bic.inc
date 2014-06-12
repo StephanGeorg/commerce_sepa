@@ -19,7 +19,7 @@ require_once(dirname(dirname(__FILE__)) . '/lib/php-iban/oophp-iban.php');
  * @param $default
  *   An array of default values for the available CC fields.
  */
-function commerce_sepa_iban_bic_form($fields = array(), $default = array()) {
+function commerce_sepa_iban_bic_form($fields = array(), $default = array(), $payment_method) {
   // Merge default values into the default array.
   $default += array(
 		'iban' => '',
@@ -62,15 +62,15 @@ function commerce_sepa_iban_bic_form($fields = array(), $default = array()) {
   $form['sepa']['mandate'] = array(
 		'#type' => 'textarea',
 		'#title' => t('SEPA Direct Debit Mandate'),
-		'#default_value' => 'This is the SEPA Direct Debit Mandate',
+		'#default_value' => $payment_method['settings']['details']['policy'],
 		'#attributes' => array('autocomplete' => 'off'),
+		'#field_suffix' => t('To debit your account via the SEPA direct debit, we require a SEPA direct debit mandate. This will sent to you via mail.')
   );
 	
 	// This is the "SEPA Direct Debit Mandate"
   $form['sepa']['mandate_check'] = array(
 		'#type' => 'checkbox',
-		'#title' => t('SEPA Direct Debit Mandate'),
-		'#options' => t('By signing this mandate form, you authorise to send instructions to your bank to debit your account.'),
+		'#title' => t('I authorise the creditor to send instructions to my bank to debit my account and my bank to debit my account. (electronic submission)'),
 		'#required' => TRUE,
   );
 

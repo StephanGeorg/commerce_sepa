@@ -23,6 +23,53 @@ function commerce_sepa_commerce_payment_method_info() {
 }
 
 /**
+ * Payment method callback: settings form.
+ */
+function commerce_sepa_settings_form($settings = NULL) {
+  $form = array();
+  // Merge default settings into the stored settings array.
+  $settings = (array) $settings + array(
+    'commerce_sepa_transfer_bank_code_appellation' => 'Bank code',
+    'commerce_sepa_transfer_subject_oid' => FALSE,
+  );
+	
+	
+	$mandate = '	
+SEPA Direct Debit Mandate/SEPA-Lastschriftmandat
+for SEPA Core Direct Debit Scheme/für SEPA-Basis-Lastschriftverfahren
+
+By signing this mandate form, you authorise [Name] to send instructions to your bank to debit your account and your 
+bank to debit your account in accordance with the instructions from [Name].';
+
+  // help text
+  $form['ccommerce_sepa_transfer_help_text'] = array(
+    '#markup' => '<div class="help">' . t('<h4><strong>Setup instructions</strong></h4>
+									<p>For better customer experience please use the token [order-payment-bank-details] to display the bank details on the invoice. 
+									You can find an example invoice template doing this in the commerce_bank_transfer module folder.</p><p>Enter the bank account 
+									details to display to customers who choose this payment method during checkout. Details left empty will not be shown. You can 
+									also choose to leave all bank details empty and create your own output using the payment instructions.</p>') . '</div>', 
+  );
+  // settings
+  $form['details'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('SEPA Direct Debit Mandate'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+	);
+	$form['details']['policy'] = array(
+		'#type' => 'textarea',
+		'#title' => t('SEPA Direct Debit Mandate'),
+		'#description' => t('This is the SEPA Direct Debit Mandate the customer must confirm and will be mailed.'),
+		'#default_value' => isset($settings['details']['policy']) ? $settings['details']['policy'] : $mandate,
+		'#required' => FALSE,
+		'#rows' => 6,
+	);
+
+  return $form;
+}
+
+
+/**
  * Payment method callback: submit form.
  */
 function commerce_sepa_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
@@ -30,7 +77,7 @@ function commerce_sepa_submit_form($payment_method, $pane_values, $checkout_pane
 
   // Default to a known test credit card number. For valid numbers of other card
   // types see: http://www.rimmkaufman.com/blog/credit-card-test-numbers/09112007/
-  return commerce_sepa_iban_bic_form(array(), array('number' => '4111111111111111'));
+  return commerce_sepa_iban_bic_form(array(), array('number' => '4111111111111111'), $payment_method);
 }
 
 /**
@@ -109,16 +156,29 @@ function commerce_sepa_default_rules_configuration() {
     "PLUGIN" : "reaction rule",
     "OWNER" : "rules",
     "TAGS" : [ "Commerce", "Commerce SEPA" ],
-    "REQUIRES" : [ "commerce_payment", "rules_i18n", "rules", "commerce_checkout" ],
+    "REQUIRES" : [ "commerce_payment", "rules", "rules_i18n", "commerce_checkout" ],
     "ON" : { "commerce_checkout_complete" : [] },
     "IF" : [
       { "commerce_payment_selected_payment_method" : { "commerce_order" : [ "commerce_order" ], "method_id" : "commerce_sepa" } }
     ],
     "DO" : [
+      { "entity_fetch" : {
+          "USING" : {
+            "type" : "commerce_payment_transaction",
+            "id" : [ "commerce-order:order-id" ]
+          },
+          "PROVIDE" : { "entity_fetched" : { "payment" : "Payment" } }
+        }
+      },
+      { "entity_fetch" : {
+          "USING" : { "type" : "commerce_customer_profile", "id" : [ "commerce-order:uid" ] },
+          "PROVIDE" : { "entity_fetched" : { "customer_entity" : "Customer" } }
+        }
+      },
       { "mail" : {
           "to" : [ "commerce-order:mail" ],
           "subject" : "SEPA Direct Debit Mandate for order [commerce-order:order-number]",
-          "message" : "SEPA-Lastschriftmandat\r\n\r\nZahlungsempf\u00e4nger: [commerce-order:commerce_customer_billing]\r\nGl\u00e4ubiger-Identifikationsnummer: DEXXXXXXXXXXX\r\nMandatsreferenz: [commerce-order:order-number]\r\n\r\nIch erm\u00e4chtige den Zahlungsempf\u00e4nger, Zahlungen von meinem Konto mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von dem Zahlungsempf\u00e4nger auf mein Konto gezogenen Lastschriften einzul\u00f6sen.\r\n\r\nHinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut vereinbarten Bedingungen.\r\n\r\n[site:name]",
+          "message" : "SEPA Direct Debit Mandate for SEPA Core Direct Debit Scheme\r\n\r\nCreditor\u2019s Name \u0026 address: [site:name]\r\nCreditor identifier: DEXXXXXXXXXXX\r\nMandate reference: [commerce-order:order-number]\r\n\r\nI authorise the creditor to send instructions to my bank to debit my account and my bank to debit my account in accordance with the instructions from.\r\n\r\nAs part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund \r\nmust be claimend within 8 weeks starting from the date on which your account was debited.\r\n\r\nDebitor\r\n[customer-entity:commerce-customer-address:name_line] \r\n[customer-entity:commerce-customer-address:organisation_name]\r\n[customer-entity:commerce-customer-address:thoroughfare]\r\n[customer-entity:commerce-customer-address:postal_code] [customer-entity:commerce-customer-address:locality]\r\n\r\nBank account\r\n[payment:message]\r\n",
           "language" : [ "commerce-order:state" ]
         }
       }
