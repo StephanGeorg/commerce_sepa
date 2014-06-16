@@ -4,6 +4,11 @@ Provides a simple SEPA payment method with IBAN validation for Drupal Commerce. 
 Once enabled customer can choose SEPA-Payment and add their IBAN and BIC to the order. After completing the order a mail with the SEPA Direct Debit Mandate is sent 
 to the customer with all necessary information (creditor identifier, mandate reference).
 
+## Installation
+
+1. Install and enable module
+2. Copy php-iban to sites/all/libraries
+
 ## Configuration
 
 You can edit the SEPA mandate for confirmation in the payment settings. 

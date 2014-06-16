@@ -149,6 +149,34 @@ function commerce_sepa_transaction($payment_method, $order, $charge) {
 }
 
 
+/**
+ * Version callback (see hook_libraries_info()).
+ * To do: should be dynamic ! oarsed from VERSION ?!?
+ */
+function iban_get_version() {
+  return '1.4.6';
+}
+
+/**
+ * Implement hook_libraries_info()
+ */
+function commerce_sepa_libraries_info() {
+  // Returns an associative array, with information about external library
+  $libraries['php-iban'] = array(
+    'name' => 'PHP IBAN',
+    'vendor url' => 'http://code.google.com/p/php-iban/',
+    'download url' => 'http://code.google.com/p/php-iban/downloads/list',
+		'version callback' => 'iban_get_version',
+    'files' => array(
+				'php' => array(
+					'php-iban.php',
+				),
+    ),
+  );
+  return $libraries;
+}
+
+
 function commerce_sepa_default_rules_configuration() {
   $configs = array();
   $rule = '{ "commerce_sepa_sent_sepa_direct_debit_mandate" : {

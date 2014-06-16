@@ -1,7 +1,7 @@
 <?php
 
 
-require_once(dirname(dirname(__FILE__)) . '/lib/php-iban/oophp-iban.php');
+//require_once(dirname(dirname(__FILE__)) . '/lib/php-iban/oophp-iban.php');
 
 
 /**
@@ -77,20 +77,23 @@ function commerce_sepa_iban_bic_form($fields = array(), $default = array(), $pay
   return $form;
 }
 
-
 /**
- * Validates the IBAN with php-iban
- *   
+ * Validates the IBAN with php-iban loaded with Libraries
+ * copy php-iban to sites/all/libraries   
  */
 function commerce_sepa_iban_bic_validate($details, $settings) {
 	$prefix = implode('][', $settings['form_parents']) . '][';
-	$myIban = new IBAN($details['iban']);
-	if($myIban->Verify()) {
-		return TRUE; 
-	} 
-	form_set_error($prefix . 'type', t('IBAN is not valid.'));
-	return FALSE;
-}
+	if (($library = libraries_detect('php-iban')) && !empty($library['installed'])) {
+		$library = libraries_load('php-iban');  
+		if(verify_iban($details['iban'])) return TRUE;   
+			form_set_error($prefix . 'type', t('IBAN is not valid.'));
+			return FALSE;	
+		}
+		else {
+			$error = $library['error'];
+			$error_message = $library['error message'];
+		}
+	}
 
 
 
